@@ -489,12 +489,13 @@ main() {
     echo -e "${COLOR_SUCCESS}   VPS SECURITY HARDENING & SETUP WIZARD (BASH) ${COLOR_RESET}"
     echo -e "${COLOR_SUCCESS}===============================================${COLOR_RESET}\n"
     
-    # Detect default swap size matching system memory
-    local default_swap=4
+    # Detect default swap size matching twice system memory
+    local default_swap=8
     if [[ -f "/proc/meminfo" ]]; then
         local mem_kb
         mem_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-        default_swap=$(( mem_kb / (1024 * 1024) ))
+        local ram_gb=$(( mem_kb / (1024 * 1024) ))
+        default_swap=$(( ram_gb * 2 ))
         # Ensure at least 2GB
         if (( default_swap < 2 )); then
             default_swap=2

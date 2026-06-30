@@ -579,14 +579,14 @@ def main():
     print(f"{COLOR_SUCCESS}   VPS SECURITY HARDENING & SETUP WIZARD       {COLOR_RESET}")
     print(f"{COLOR_SUCCESS}==============================================={COLOR_RESET}\n")
     
-    # Setup default swap size (based on RAM)
+    # Setup default swap size (twice the system RAM)
     try:
         with open("/proc/meminfo", "r") as f:
             mem_line = f.readline()
         mem_kb = int(re.search(r"\d+", mem_line).group())
-        default_swap = max(2, round(mem_kb / (1024 * 1024)))
+        default_swap = max(2, round(mem_kb / (1024 * 1024)) * 2)
     except Exception:
-        default_swap = 4
+        default_swap = 8
         
     # 1. Gather configuration details interactively
     print(f"\n{COLOR_MUTED}--> HOSTNAME CONFIGURATION:")
