@@ -605,7 +605,7 @@ def main():
     
     ssh_port_str = get_input(
         "Enter custom SSH port number",
-        default="2222",
+        default="62",
         validator=validate_ssh_port,
         error_msg="Port must be an integer between 1024 and 65535, excluding standard database ports."
     )

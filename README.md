@@ -60,7 +60,7 @@ sudo ./vps_setup.sh
 Upon running either script, the wizard interactively prompts for the following configurations (providing sensible defaults):
 1. **Hostname**: The desired system hostname (e.g. `froniqo`).
 2. **Sudo User**: The username of the new admin user.
-3. **SSH Port**: The custom port for SSH daemon (e.g. `2222`).
+3. **SSH Port**: The custom port for SSH daemon (e.g. `62`).
 4. **SSH Public Key**: The raw public key string OR path to the public key file on the local machine.
 5. **Swap Size**: Size in GB for memory swap (suggested default is based on actual system RAM).
 
