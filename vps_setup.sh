@@ -70,7 +70,7 @@ validate_ssh_port() {
         return 1
     fi
     local port=$1
-    if (( port < 1024 || port > 65535 )); then
+    if (( port < 1 || port > 65535 )); then
         return 1
     fi
     # Exclude common database ports
@@ -511,7 +511,7 @@ main() {
     # Gather inputs
     prompt_input "Enter new server hostname" "froniqo" validate_hostname "Hostname must contain only alphanumeric characters and hyphens (max 63 chars)." target_hostname
     prompt_input "Enter username for the new sudo user" "linux" validate_username "Username must start with a lowercase letter or underscore, followed by lowercase alphanumeric/hyphen/underscore (max 32 chars)." target_username
-    prompt_input "Enter custom SSH port number" "62" validate_ssh_port "Port must be an integer between 1024 and 65535, excluding standard database ports." target_ssh_port
+    prompt_input "Enter custom SSH port number" "62" validate_ssh_port "Port must be an integer between 1 and 65535, excluding standard database ports." target_ssh_port
     prompt_input "Enter SSH public key string OR path to key file" "" validate_ssh_public_key "Invalid key string or key path. Ensure file exists or paste a valid public key (e.g. ssh-rsa ...)." target_ssh_key
     prompt_input "Enter swap file size in GB (0 to disable)" "$default_swap" validate_swap_size "Please enter a valid integer between 0 and 64." target_swap_size
     

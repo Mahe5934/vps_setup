@@ -118,9 +118,9 @@ def validate_username(username):
 def validate_ssh_port(port_str):
     try:
         port = int(port_str)
-        # Ports 1024-65535, excluding known server ports to avoid conflict
+        # Ports 1-65535, excluding known server ports to avoid conflict
         banned_ports = [1433, 1521, 3306, 5432, 6379, 8080, 27017]
-        return 1024 <= port <= 65535 and port not in banned_ports
+        return 1 <= port <= 65535 and port not in banned_ports
     except ValueError:
         return False
 
@@ -607,7 +607,7 @@ def main():
         "Enter custom SSH port number",
         default="62",
         validator=validate_ssh_port,
-        error_msg="Port must be an integer between 1024 and 65535, excluding standard database ports."
+        error_msg="Port must be an integer between 1 and 65535, excluding standard database ports."
     )
     ssh_port = int(ssh_port_str)
     
