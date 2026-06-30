@@ -38,19 +38,30 @@ ProjectRoot/
 
 ## 🚀 Getting Started
 
-Ensure you run these scripts as `root` or with `sudo` on a clean Debian/Ubuntu server.
+Ensure you run these scripts as `root` or with `sudo` on a clean Debian/Ubuntu server. You can fetch and execute them directly from the remote repository using `curl` or `wget`.
 
 ### Option A: Python Script (Recommended)
-The Python version includes robust validators for input strings and paths using Python's standard library.
+The Python version includes robust validators for input strings and paths using Python's standard library. 
+
+Download and run using **curl**:
 ```bash
-sudo python3 Vps_setup.py
+curl -sSL https://raw.githubusercontent.com/Mahe5934/vps_setup/main/Vps_setup.py -o Vps_setup.py && sudo python3 Vps_setup.py
+```
+Or using **wget**:
+```bash
+wget -q https://raw.githubusercontent.com/Mahe5934/vps_setup/main/Vps_setup.py -O Vps_setup.py && sudo python3 Vps_setup.py
 ```
 
 ### Option B: Bash Script
 The Bash version is written with strict safety flags (`set -euo pipefail`) and executes equivalent actions.
+
+Download and run using **curl**:
 ```bash
-chmod +x vps_setup.sh
-sudo ./vps_setup.sh
+curl -sSL https://raw.githubusercontent.com/Mahe5934/vps_setup/main/vps_setup.sh -o vps_setup.sh && chmod +x vps_setup.sh && sudo ./vps_setup.sh
+```
+Or using **wget**:
+```bash
+wget -q https://raw.githubusercontent.com/Mahe5934/vps_setup/main/vps_setup.sh -O vps_setup.sh && chmod +x vps_setup.sh && sudo ./vps_setup.sh
 ```
 
 ---
