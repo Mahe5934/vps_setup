@@ -245,7 +245,11 @@ install_packages() {
     apt-get upgrade -y -o Dpkg::Options::="--force-confold"
     
     log_info "Installing security tools and packages..."
-    apt-get install -y nginx certbot python3-certbot-nginx ufw fail2ban unattended-upgrades rkhunter chkrootkit auditd chrony
+    apt-get install -y openssh-server nginx certbot python3-certbot-nginx ufw fail2ban unattended-upgrades rkhunter chkrootkit auditd chrony
+    
+    log_info "Enabling and starting SSH service..."
+    systemctl enable --now ssh
+    
     log_success "All packages installed."
 }
 
@@ -361,12 +365,39 @@ create_sudo_user() {
     chmod 600 "$root_auth_keys"
     log_success "SSH key deployed for 'root'."
     
-    # Configure passwordless sudo
-    local sudoers_file="/etc/sudoers.d/${user}"
-    if [[ ! -f "$sudoers_file" ]]; then
-        echo "${user} ALL=(ALL) NOPASSWD:ALL" > "$sudoers_file"
-        chmod 440 "$sudoers_file"
-        log_info "Passwordless sudo configured for user '$user'."
+    # Configure passwordless sudo in /etc/sudoers with visudo verification
+    configure_sudoers "$user"
+}
+
+configure_sudoers() {
+    local user="$1"
+    log_info "Configuring sudoers file..."
+    local file="/etc/sudoers"
+    backup_file "$file"
+    
+    local line_to_add="${user} ALL=(ALL) NOPASSWD: ALL"
+    if grep -qF "$line_to_add" "$file"; then
+        log_warning "Sudoers configuration already present."
+        return
+    fi
+    
+    local temp_file="/etc/sudoers.tmp"
+    cp "$file" "$temp_file"
+    
+    cat <<EOF >> "$temp_file"
+
+# Allow the ${user} to run commands as root without a password
+${user} ALL=(ALL) NOPASSWD: ALL
+EOF
+
+    if visudo -c -f "$temp_file" &>/dev/null; then
+        mv "$temp_file" "$file"
+        chmod 440 "$file"
+        log_success "Sudoers file updated and validated successfully."
+    else
+        log_error "Invalid sudoers syntax generated. Sudoers modifications aborted."
+        rm -f "$temp_file"
+        exit 1
     fi
 }
 
@@ -375,6 +406,15 @@ configure_ssh_daemon() {
     local port="$2"
     
     log_info "Securing SSH Daemon config..."
+    
+    # Safety Check: Verify root has authorized_keys before setting PermitRootLogin to prohibit-password
+    local root_keys_file="/root/.ssh/authorized_keys"
+    if [[ ! -s "$root_keys_file" ]]; then
+        log_error "CRITICAL SAFETY CHECK FAILED: /root/.ssh/authorized_keys is empty or does not exist!"
+        log_error "Aborting SSH configuration update to prevent locking you out of the server."
+        exit 1
+    fi
+    
     backup_file "/etc/ssh/sshd_config"
     
     # Write to a temporary config to validate before saving
@@ -394,6 +434,7 @@ configure_ssh_daemon() {
     
     update_sshd_setting_temp "Port" "$port"
     update_sshd_setting_temp "PasswordAuthentication" "no"
+    update_sshd_setting_temp "PubkeyAuthentication" "yes"
     update_sshd_setting_temp "PermitRootLogin" "prohibit-password"
     update_sshd_setting_temp "PermitEmptyPasswords" "no"
     update_sshd_setting_temp "MaxAuthTries" "3"

@@ -338,10 +338,14 @@ def install_packages():
     
     log_info("Installing required security and system packages...")
     packages = [
-        "nginx", "certbot", "python3-certbot-nginx", "ufw", "fail2ban", 
+        "openssh-server", "nginx", "certbot", "python3-certbot-nginx", "ufw", "fail2ban", 
         "unattended-upgrades", "rkhunter", "chkrootkit", "auditd", "chrony"
     ]
     run_cmd(["apt-get", "install", "-y"] + packages)
+    
+    log_info("Enabling and starting SSH service...")
+    run_cmd(["systemctl", "enable", "--now", "ssh"])
+    
     log_success("All packages installed successfully.")
 
 def configure_auto_updates():
@@ -491,20 +495,59 @@ def create_sudo_user(username, ssh_key_input):
     os.chmod(root_auth_keys_path, 0o600)
     log_success("SSH authorized keys provisioned for 'root'.")
     
-    # Configure passwordless sudo for convenience & safe setup verification
-    sudoers_d_file = f"/etc/sudoers.d/{username}"
-    if not os.path.exists(sudoers_d_file):
-        with open(sudoers_d_file, "w") as f:
-            f.write(f"{username} ALL=(ALL) NOPASSWD:ALL\n")
-        os.chmod(sudoers_d_file, 0o440)
-        log_info(f"Passwordless sudo configured for '{username}' in /etc/sudoers.d/")
+    # Configure passwordless sudo in /etc/sudoers with visudo verification
+    configure_sudoers(username)
+
+def configure_sudoers(username):
+    log_info("Configuring sudoers file...")
+    sudoers_path = "/etc/sudoers"
+    backup_file(sudoers_path)
+    
+    with open(sudoers_path, "r") as f:
+        content = f.read()
+        
+    line_to_add = f"{username} ALL=(ALL) NOPASSWD: ALL"
+    if line_to_add in content:
+        log_warning("Sudoers configuration already present.")
+        return
+        
+    sudo_block = (
+        f"\n# Allow the {username} to run commands as root without a password\n"
+        f"{username} ALL=(ALL) NOPASSWD: ALL\n"
+    )
+    
+    temp_sudoers = "/etc/sudoers.tmp"
+    with open(temp_sudoers, "w") as f:
+        f.write(content + sudo_block)
+        
+    # Validate with visudo
+    res = subprocess.run(["visudo", "-c", "-f", temp_sudoers], capture_output=True, text=True)
+    if res.returncode == 0:
+        shutil.copy2(temp_sudoers, sudoers_path)
+        os.chmod(sudoers_path, 0o440)
+        os.remove(temp_sudoers)
+        log_success("Sudoers file updated and validated successfully.")
+    else:
+        log_error("Invalid sudoers syntax generated. Aborting sudoers modification.")
+        log_error(res.stderr)
+        if os.path.exists(temp_sudoers):
+            os.remove(temp_sudoers)
+        sys.exit(1)
 
 def configure_ssh_daemon(username, ssh_port):
     log_info("Hardening SSH Daemon config...")
     
+    # Safety Check: Verify root has authorized_keys before setting PermitRootLogin to prohibit-password
+    root_keys_file = "/root/.ssh/authorized_keys"
+    if not os.path.exists(root_keys_file) or os.path.getsize(root_keys_file) == 0:
+        log_error("CRITICAL SAFETY CHECK FAILED: /root/.ssh/authorized_keys is empty or does not exist!")
+        log_error("Aborting SSH configuration update to prevent locking you out of the server.")
+        sys.exit(1)
+        
     ssh_settings = {
         "Port": str(ssh_port),
         "PasswordAuthentication": "no",
+        "PubkeyAuthentication": "yes",
         "PermitRootLogin": "prohibit-password",
         "PermitEmptyPasswords": "no",
         "MaxAuthTries": "3",
