@@ -55,6 +55,18 @@ backup_file() {
     fi
 }
 
+get_server_ip() {
+    local ip=""
+    ip=$(curl -s --max-time 3 https://icanhazip.com 2>/dev/null || true)
+    if [[ -z "$ip" ]]; then
+        ip=$(curl -s --max-time 3 https://ifconfig.me 2>/dev/null || true)
+    fi
+    if [[ -z "$ip" ]]; then
+        ip=$(ip route get 1.1.1.1 2>/dev/null | grep -oE 'src \S+' | awk '{print $2}' || true)
+    fi
+    echo "${ip:-<your_vps_ip>}"
+}
+
 # --- Validation Functions ---
 
 validate_hostname() {
@@ -574,7 +586,9 @@ main() {
     echo -e "\n${COLOR_WARNING}-------------------------------------------------------${COLOR_RESET}"
     echo -e "${COLOR_WARNING} IMPORTANT INSTRUCTIONS FOR YOUR NEXT CONNECTION:${COLOR_RESET}"
     echo -e "  1. Test your SSH connection in a NEW terminal window before closing this one!"
-    echo -e "  2. Connection command: ssh -p ${target_ssh_port} ${target_username}@${target_hostname}"
+    local server_ip
+    server_ip=$(get_server_ip)
+    echo -e "  2. Connection command: ssh -p ${target_ssh_port} ${target_username}@${server_ip}"
     echo -e "${COLOR_WARNING}-------------------------------------------------------${COLOR_RESET}\n"
     
     echo -e "\n${COLOR_MUTED}--> REBOOT RECOMMENDED:"

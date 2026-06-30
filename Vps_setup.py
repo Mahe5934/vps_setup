@@ -92,6 +92,26 @@ def backup_file(filepath):
             sys.exit(1)
     return None
 
+def get_server_ip():
+    # Try fetching public IP via curl
+    for service in ["https://icanhazip.com", "https://ifconfig.me"]:
+        try:
+            res = subprocess.run(["curl", "-s", "--max-time", "3", service], capture_output=True, text=True)
+            if res.returncode == 0 and res.stdout.strip():
+                return res.stdout.strip()
+        except Exception:
+            pass
+    # Fallback to ip route get
+    try:
+        res = subprocess.run(["ip", "route", "get", "1.1.1.1"], capture_output=True, text=True)
+        if res.returncode == 0:
+            match = re.search(r"src\s+(\S+)", res.stdout)
+            if match:
+                return match.group(1)
+    except Exception:
+        pass
+    return "<your_vps_ip>"
+
 # --- Interactive Prompts ---
 
 def get_input(prompt_text, default=None, validator=None, error_msg=None):
@@ -677,7 +697,8 @@ def main():
     print(f"\n{COLOR_WARNING}-------------------------------------------------------{COLOR_RESET}")
     print(f"{COLOR_WARNING} IMPORTANT INSTRUCTIONS FOR YOUR NEXT CONNECTION:{COLOR_RESET}")
     print(f"  1. Test your SSH connection in a NEW terminal window before closing this one!")
-    print(f"  2. Connection command: ssh -p {ssh_port} {username}@{hostname or '<your_vps_ip>'}")
+    server_ip = get_server_ip()
+    print(f"  2. Connection command: ssh -p {ssh_port} {username}@{server_ip}")
     print(f"{COLOR_WARNING}-------------------------------------------------------{COLOR_RESET}\n")
     
     print(f"\n{COLOR_MUTED}--> REBOOT RECOMMENDED:")
