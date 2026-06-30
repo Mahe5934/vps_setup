@@ -509,10 +509,30 @@ main() {
     local target_swap_size=""
     
     # Gather inputs
+    echo -e "\n${COLOR_MUTED}--> HOSTNAME CONFIGURATION:"
+    echo -e "    This identifies your VPS on the network and in your command line prompt."
+    echo -e "    Can contain letters, numbers, and hyphens (max 63 chars).${COLOR_RESET}"
     prompt_input "Enter new server hostname" "froniqo" validate_hostname "Hostname must contain only alphanumeric characters and hyphens (max 63 chars)." target_hostname
+    
+    echo -e "\n${COLOR_MUTED}--> ADMIN USER CONFIGURATION:"
+    echo -e "    For security, root login is disabled. We will create a new administrator"
+    echo -e "    user with sudo privileges to manage this server.${COLOR_RESET}"
     prompt_input "Enter username for the new sudo user" "linux" validate_username "Username must start with a lowercase letter or underscore, followed by lowercase alphanumeric/hyphen/underscore (max 32 chars)." target_username
+    
+    echo -e "\n${COLOR_MUTED}--> SSH PORT HARDENING:"
+    echo -e "    Bots continuously scan port 22. Changing the port stops automated script attacks."
+    echo -e "    Choose any port from 1 to 65535 (port 62 is set as default).${COLOR_RESET}"
     prompt_input "Enter custom SSH port number" "62" validate_ssh_port "Port must be an integer between 1 and 65535, excluding standard database ports." target_ssh_port
+    
+    echo -e "\n${COLOR_MUTED}--> CRYPTOGRAPHIC KEY AUTHENTICATION:"
+    echo -e "    This secures access by requiring an SSH Key instead of a weak password."
+    echo -e "    Paste the contents of your public key (e.g. starting with 'ssh-rsa' or 'ssh-ed25519')"
+    echo -e "    or enter the absolute path to your public key file on this server.${COLOR_RESET}"
     prompt_input "Enter SSH public key string OR path to key file" "" validate_ssh_public_key "Invalid key string or key path. Ensure file exists or paste a valid public key (e.g. ssh-rsa ...)." target_ssh_key
+    
+    echo -e "\n${COLOR_MUTED}--> SWAP FILE (VIRTUAL MEMORY) CONFIGURATION:"
+    echo -e "    Swap acts as backup memory when the VPS runs out of physical RAM."
+    echo -e "    Setting this prevents application crashes due to Out-Of-Memory conditions.${COLOR_RESET}"
     prompt_input "Enter swap file size in GB (0 to disable)" "$default_swap" validate_swap_size "Please enter a valid integer between 0 and 64." target_swap_size
     
     # Summary
@@ -524,6 +544,9 @@ main() {
     echo -e "  SSH Key:    [Valid key or key path set]"
     echo -e "\nSetup logs will compile at: ${LOG_FILE}\n"
     
+    echo -e "\n${COLOR_MUTED}--> START HARDENING INSTALLATION:"
+    echo -e "    This will begin editing system configuration files, installing security tools,"
+    echo -e "    setting up firewall rules, and applying kernel policies.${COLOR_RESET}"
     read -r -p "Begin VPS hardening now? (y/n): " confirm_setup
     if [[ ! "$confirm_setup" =~ ^[Yy]$ ]]; then
         echo "Installation aborted."
@@ -553,6 +576,9 @@ main() {
     echo -e "  2. Connection command: ssh -p ${target_ssh_port} ${target_username}@${target_hostname}"
     echo -e "${COLOR_WARNING}-------------------------------------------------------${COLOR_RESET}\n"
     
+    echo -e "\n${COLOR_MUTED}--> REBOOT RECOMMENDED:"
+    echo -e "    A system reboot is required to activate kernel security hardening modifications,"
+    echo -e "    remount the secure /dev/shm partition, and load upgraded kernel modules.${COLOR_RESET}"
     read -r -p "Would you like to reboot the VPS now to apply all updates? (y/n) [n]: " confirm_reboot
     if [[ "$confirm_reboot" =~ ^[Yy]$ ]]; then
         log_info "Rebooting system now..."

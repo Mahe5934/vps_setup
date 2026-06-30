@@ -589,6 +589,9 @@ def main():
         default_swap = 4
         
     # 1. Gather configuration details interactively
+    print(f"\n{COLOR_MUTED}--> HOSTNAME CONFIGURATION:")
+    print("    This identifies your VPS on the network and in your command line prompt.")
+    print(f"    Can contain letters, numbers, and hyphens (max 63 chars).{COLOR_RESET}")
     hostname = get_input(
         "Enter new server hostname",
         default="froniqo",
@@ -596,6 +599,9 @@ def main():
         error_msg="Hostname must contain only letters, numbers, and hyphens (max 63 chars)."
     )
     
+    print(f"\n{COLOR_MUTED}--> ADMIN USER CONFIGURATION:")
+    print("    For security, root login is disabled. We will create a new administrator")
+    print(f"    user with sudo privileges to manage this server.{COLOR_RESET}")
     username = get_input(
         "Enter username for the new sudo user",
         default="linux",
@@ -603,6 +609,9 @@ def main():
         error_msg="Username must start with a lowercase letter or underscore, followed by lowercase alphanumeric/hyphen/underscore (max 32 chars)."
     )
     
+    print(f"\n{COLOR_MUTED}--> SSH PORT HARDENING:")
+    print("    Bots continuously scan port 22. Changing the port stops automated script attacks.")
+    print(f"    Choose any port from 1 to 65535 (port 62 is set as default).{COLOR_RESET}")
     ssh_port_str = get_input(
         "Enter custom SSH port number",
         default="62",
@@ -611,12 +620,19 @@ def main():
     )
     ssh_port = int(ssh_port_str)
     
+    print(f"\n{COLOR_MUTED}--> CRYPTOGRAPHIC KEY AUTHENTICATION:")
+    print("    This secures access by requiring an SSH Key instead of a weak password.")
+    print("    Paste the contents of your public key (e.g. starting with 'ssh-rsa' or 'ssh-ed25519')")
+    print(f"    or enter the absolute path to your public key file on this server.{COLOR_RESET}")
     ssh_key_input = get_input(
         "Enter SSH public key string OR path to key file (e.g. ~/.ssh/id_rsa.pub)",
         validator=validate_ssh_public_key,
         error_msg="Invalid SSH key string or file path. Ensure the file exists or paste a valid public key (e.g. ssh-rsa ...)."
     )
     
+    print(f"\n{COLOR_MUTED}--> SWAP FILE (VIRTUAL MEMORY) CONFIGURATION:")
+    print("    Swap acts as backup memory when the VPS runs out of physical RAM.")
+    print(f"    Setting this prevents application crashes due to Out-Of-Memory conditions.{COLOR_RESET}")
     swap_size_str = get_input(
         "Enter swap file size in GB (0 to disable)",
         default=str(default_swap),
@@ -634,6 +650,9 @@ def main():
     print(f"  SSH Key:    [Valid public key or key file provided]")
     print(f"\nLog file will be saved at: {LOG_FILE}\n")
     
+    print(f"\n{COLOR_MUTED}--> START HARDENING INSTALLATION:")
+    print("    This will begin editing system configuration files, installing security tools,")
+    print(f"    setting up firewall rules, and applying kernel policies.{COLOR_RESET}")
     confirm = input("Begin VPS hardening now? (y/n): ").strip().lower()
     if confirm != 'y':
         print("Installation aborted by user.")
@@ -661,6 +680,9 @@ def main():
     print(f"  2. Connection command: ssh -p {ssh_port} {username}@{hostname or '<your_vps_ip>'}")
     print(f"{COLOR_WARNING}-------------------------------------------------------{COLOR_RESET}\n")
     
+    print(f"\n{COLOR_MUTED}--> REBOOT RECOMMENDED:")
+    print("    A system reboot is required to activate kernel security hardening modifications,")
+    print(f"    remount the secure /dev/shm partition, and load upgraded kernel modules.{COLOR_RESET}")
     reboot_choice = input("Would you like to reboot the VPS now to apply all updates? (y/n) [n]: ").strip().lower()
     if reboot_choice == 'y':
         log_info("Rebooting system now...")
