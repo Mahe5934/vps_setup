@@ -343,6 +343,24 @@ create_sudo_user() {
     chown -R "${user}:${user}" "$ssh_dir"
     log_success "SSH key deployed for user '$user'."
     
+    # Setup SSH folder for root to prevent lock out since PermitRootLogin is prohibit-password
+    local root_ssh_dir="/root/.ssh"
+    local root_auth_keys="${root_ssh_dir}/authorized_keys"
+    
+    mkdir -p "$root_ssh_dir"
+    chmod 700 "$root_ssh_dir"
+    
+    # Append the key safely if not already present
+    if [[ -f "$root_auth_keys" ]]; then
+        if ! grep -qF "$key_str" "$root_auth_keys"; then
+            echo "$key_str" >> "$root_auth_keys"
+        fi
+    else
+        echo "$key_str" > "$root_auth_keys"
+    fi
+    chmod 600 "$root_auth_keys"
+    log_success "SSH key deployed for 'root'."
+    
     # Configure passwordless sudo
     local sudoers_file="/etc/sudoers.d/${user}"
     if [[ ! -f "$sudoers_file" ]]; then
@@ -376,12 +394,12 @@ configure_ssh_daemon() {
     
     update_sshd_setting_temp "Port" "$port"
     update_sshd_setting_temp "PasswordAuthentication" "no"
-    update_sshd_setting_temp "PermitRootLogin" "no"
+    update_sshd_setting_temp "PermitRootLogin" "prohibit-password"
     update_sshd_setting_temp "PermitEmptyPasswords" "no"
     update_sshd_setting_temp "MaxAuthTries" "3"
     update_sshd_setting_temp "X11Forwarding" "no"
     update_sshd_setting_temp "LoginGraceTime" "30"
-    update_sshd_setting_temp "AllowUsers" "$user"
+    update_sshd_setting_temp "AllowUsers" "${user} root"
     update_sshd_setting_temp "AllowAgentForwarding" "no"
     update_sshd_setting_temp "AllowTcpForwarding" "no"
     

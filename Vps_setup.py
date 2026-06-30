@@ -469,6 +469,28 @@ def create_sudo_user(username, ssh_key_input):
     os.chown(auth_keys_path, uid, gid)
     log_success(f"SSH authorized keys provisioned for user '{username}'.")
     
+    # Setup SSH folder for root to prevent lock out since PermitRootLogin is prohibit-password
+    root_ssh_dir = "/root/.ssh"
+    root_auth_keys_path = os.path.join(root_ssh_dir, "authorized_keys")
+    if not os.path.exists(root_ssh_dir):
+        os.makedirs(root_ssh_dir, mode=0o700)
+    
+    # Append the key safely if not already present
+    root_keys_content = ""
+    if os.path.exists(root_auth_keys_path):
+        try:
+            with open(root_auth_keys_path, "r") as rf:
+                root_keys_content = rf.read()
+        except Exception:
+            pass
+            
+    if key_str not in root_keys_content:
+        with open(root_auth_keys_path, "a") as af:
+            af.write(key_str + "\n")
+            
+    os.chmod(root_auth_keys_path, 0o600)
+    log_success("SSH authorized keys provisioned for 'root'.")
+    
     # Configure passwordless sudo for convenience & safe setup verification
     sudoers_d_file = f"/etc/sudoers.d/{username}"
     if not os.path.exists(sudoers_d_file):
@@ -483,12 +505,12 @@ def configure_ssh_daemon(username, ssh_port):
     ssh_settings = {
         "Port": str(ssh_port),
         "PasswordAuthentication": "no",
-        "PermitRootLogin": "no",
+        "PermitRootLogin": "prohibit-password",
         "PermitEmptyPasswords": "no",
         "MaxAuthTries": "3",
         "X11Forwarding": "no",
         "LoginGraceTime": "30",
-        "AllowUsers": username,
+        "AllowUsers": f"{username} root",
         "AllowAgentForwarding": "no",
         "AllowTcpForwarding": "no"
     }
